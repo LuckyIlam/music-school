@@ -75,22 +75,54 @@ mod tests {
 
     #[test]
     fn test_invalid_phone_number_formats() {
-        let invalid_phones = vec!["12345", "123-456-789XX", "12345678901", "(123)456-7890", "123 456 789"]; // Last one needs 10 digits
+
+        let invalid_phones = vec![
+            "123456789",         // missing leading 0 or country code
+            "012345678",         // too short
+            "+33 1 23 45 67 8",  // too short with country code
+            "0044123456789",     // wrong country code
+            "01-23-45-67-890",   // too long
+            "012-345-6789",      // incorrect grouping for French numbers
+            "+33 (0) 1 23 45 67 89 01", // too long with (0)
+            "01.23.45.67.89.",   // trailing separator
+            ".01.23.45.67.89",  // leading separator
+            "01234567890",       // too long, no separators
+            "+331234567890",     // too long, with +33
+            "00331234567890",    // too long, with 0033
+            "0 1 2 3 4 5 6 7 8 9", // separators between each digit
+            "012345678A",        // invalid character
+        ];
         for phone in invalid_phones {
             let mut student = valid_student_data();
             student.phonenumber = phone.to_string();
-            let errors = student.validate().unwrap_err();
-            assert!(errors.contains(&"Invalid phone number format. Expected XXX-XXX-XXXX or (XXX) XXX-XXXX.".to_string()), "Failed for phone: {}", phone);
+            let result = student.validate();
+            assert!(result.is_err(), "Expected error for phone: {}", phone);
+            if let Err(errors) = result {
+                assert!(errors.contains(&"Invalid phone number format.".to_string()), "Failed for phone: {}. Errors: {:?}", phone, errors);
+            }
         }
     }
 
     #[test]
     fn test_valid_phone_number_formats() {
-        let valid_phones = vec!["123-456-7890", "(123) 456-7890", "123 456 7890", "(123)456-7890", "123-456-7890"];
+        let valid_phones = vec![
+            "0123456789",
+            "+33123456789",
+            "0033123456789",
+            "01 23 45 67 89",
+            "+33 1 23 45 67 89",
+            "0033 (0)1 23 45 67 89", // Handled by (?:\(0\)[ ]?)?
+            "06.12.34.56.78",
+            "0033(0)123456789",      // Valid: No space after (0)
+            "+33 (0) 123456789",     // Valid: Space after (0)
+            "01-23-45-67-89",        // Valid: Hyphenated
+        ];
         for phone in valid_phones {
             let mut student = valid_student_data();
             student.phonenumber = phone.to_string();
-            assert!(student.validate().is_ok(), "Failed for phone: {}", phone);
+            // For valid student data, ensure the default phone number is also valid or not checked here
+            // Overwriting it like above is fine.
+            assert!(student.validate().is_ok(), "Validation failed for a supposedly valid phone: {}", phone);
         }
     }
 

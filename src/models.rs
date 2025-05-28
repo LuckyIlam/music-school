@@ -37,10 +37,29 @@ impl CreateStudent {
             errors.push("Invalid email format.".to_string());
         }
 
-        // Phone number validation for North American format
-        let phone_regex = Regex::new(r"^(\(\d{3}\)|\d{3})[- ]?\d{3}[- ]?\d{4}$").unwrap();
-        if !self.phonenumber.trim().is_empty() && !phone_regex.is_match(&self.phonenumber) {
-            errors.push("Invalid phone number format. Expected XXX-XXX-XXXX or (XXX) XXX-XXXX.".to_string());
+        // Phone number validation (e.g., French format)
+        // Regex Explanation:
+        // ^                                      Start of string
+        // (?:                                    Non-capturing group for prefix
+        //   (?:(?:\+|00)33[ ]?(?:\(0\)[ ]?)?)     Optional international prefix: +33 or 0033, optional space, optional (0) with optional space
+        //   |                                      OR
+        //   0                                      National prefix 0
+        // ){1}                                   Exactly one of these prefixes
+        // [1-9]{1}                               First digit after prefix (cannot be 0 for standard lines)
+        // (?:[ .-]?(?:\d{2})){4}                 Four pairs of digits, each pair optionally preceded by a separator (space, dot, or hyphen)
+        // $                                      End of string
+        let phone_regex_str = r#"^(?:(?:(?:\+|00)33[ ]?(?:\(0\)[ ]?)?)|0){1}[1-9]{1}(?:[ .-]?(?:\d{2})){4}$"#;
+        match Regex::new(phone_regex_str) {
+            Ok(phone_regex) => {
+                if !self.phonenumber.trim().is_empty() && !phone_regex.is_match(&self.phonenumber) {
+                    errors.push("Invalid phone number format.".to_string());
+                }
+            }
+            Err(e) => {
+                // Log the regex compilation error for debugging
+                eprintln!("Regex compilation error: {}", e);
+                errors.push("Internal error: Phone number validation pattern is invalid.".to_string());
+            }
         }
 
         // Birthday validation
