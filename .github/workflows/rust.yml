@@ -28,12 +28,15 @@ jobs:
     - name: Prepare SQLx data
       run: SQLX_OFFLINE=true cargo sqlx prepare
       env:
+        DATABASE_URL: postgres://user:pass@localhost/db
         SQLX_OFFLINE: true
     - name: Build
       run: SQLX_OFFLINE=true cargo build --verbose
       env:
+        DATABASE_URL: postgres://user:pass@localhost/db
         SQLX_OFFLINE: true
     - name: Run tests
       run: SQLX_OFFLINE=true cargo test --verbose
       env:
+        DATABASE_URL: postgres://user:pass@localhost/db
         SQLX_OFFLINE: true
