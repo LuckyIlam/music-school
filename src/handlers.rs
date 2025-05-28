@@ -9,6 +9,11 @@ pub async fn create_student_handler(
 ) -> impl Responder {
     let new_student = student_data.into_inner();
 
+    // Validate the incoming student data
+    if let Err(validation_errors) = new_student.validate() {
+        return HttpResponse::BadRequest().json(serde_json::json!({ "errors": validation_errors }));
+    }
+
     // Log the received student data (optional, for debugging)
     // println!("Received student data: {:?}", new_student);
 

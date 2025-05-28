@@ -1,6 +1,7 @@
 use serde::{Serialize, Deserialize};
-use chrono::NaiveDate;
+use chrono::{NaiveDate, Utc};
 use sqlx::FromRow;
+use regex::Regex;
 
 #[derive(Debug, Serialize, Deserialize, Clone, FromRow)]
 pub struct Student {
@@ -10,6 +11,68 @@ pub struct Student {
     pub phonenumber: String,
     pub birthday: NaiveDate,
     pub email: String,
+}
+
+impl CreateStudent {
+    pub fn validate(&self) -> Result<(), Vec<String>> {
+        let mut errors = Vec::new();
+
+        if self.name.trim().is_empty() {
+            errors.push("Name cannot be empty.".to_string());
+        }
+        if self.surname.trim().is_empty() {
+            errors.push("Surname cannot be empty.".to_string());
+        }
+        if self.phonenumber.trim().is_empty() {
+            errors.push("Phone number cannot be empty.".to_string());
+        }
+        if self.email.trim().is_empty() {
+            errors.push("Email cannot be empty.".to_string());
+        }
+
+        // Email validation using a simplified regex for demonstration.
+        // RFC 5322 is complex; a production app might use a dedicated library.
+        let email_regex = Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").unwrap();
+        if !self.email.trim().is_empty() && !email_regex.is_match(&self.email) {
+            errors.push("Invalid email format.".to_string());
+        }
+
+        // Phone number validation (e.g., French format)
+        // Regex Explanation:
+        // ^                                      Start of string
+        // (?:                                    Non-capturing group for prefix
+        //   (?:(?:\+|00)33[ ]?(?:\(0\)[ ]?)?)     Optional international prefix: +33 or 0033, optional space, optional (0) with optional space
+        //   |                                      OR
+        //   0                                      National prefix 0
+        // ){1}                                   Exactly one of these prefixes
+        // [1-9]{1}                               First digit after prefix (cannot be 0 for standard lines)
+        // (?:[ .-]?(?:\d{2})){4}                 Four pairs of digits, each pair optionally preceded by a separator (space, dot, or hyphen)
+        // $                                      End of string
+        let phone_regex_str = r#"^(?:(?:(?:\+|00)33[ ]?(?:\(0\)[ ]?)?)|0){1}[1-9]{1}(?:[ .-]?(?:\d{2})){4}$"#;
+        match Regex::new(phone_regex_str) {
+            Ok(phone_regex) => {
+                if !self.phonenumber.trim().is_empty() && !phone_regex.is_match(&self.phonenumber) {
+                    errors.push("Invalid phone number format.".to_string());
+                }
+            }
+            Err(e) => {
+                // Log the regex compilation error for debugging
+                eprintln!("Regex compilation error: {}", e);
+                errors.push("Internal error: Phone number validation pattern is invalid.".to_string());
+            }
+        }
+
+        // Birthday validation
+        if self.birthday > Utc::now().date_naive() {
+            errors.push("Birthday cannot be in the future.".to_string());
+        }
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
 }
 
 // We might also want a struct for creating a new student, without the id
