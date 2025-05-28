@@ -8,12 +8,26 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  DATABASE_URL: postgres://user:pass@host/db
+  DATABASE_URL: postgres://testuser:testpassword@localhost:5432/testdb
 
 jobs:
   build:
 
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13 # Using a specific version like 13 is often more stable than :latest
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432 # Map container port to host (runner) port
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
     - uses: actions/checkout@v4
@@ -24,19 +38,16 @@ jobs:
         profile: minimal
         override: true
     - name: Install sqlx-cli
-      run: cargo install sqlx-cli --version "0.7.4" --locked
+      run: cargo install sqlx-cli --version "0.7.4" --locked --no-default-features --features native-tls,postgres
     - name: Prepare SQLx data
-      run: SQLX_OFFLINE=true cargo sqlx prepare
+      run: cargo sqlx prepare --check -- --tests
       env:
-        DATABASE_URL: postgres://user:pass@localhost/db
-        SQLX_OFFLINE: true
+        SQLX_OFFLINE: false # Explicitly false for prepare, it needs to connect
     - name: Build
       run: SQLX_OFFLINE=true cargo build --verbose
       env:
-        DATABASE_URL: postgres://user:pass@localhost/db
-        SQLX_OFFLINE: true
+        SQLX_OFFLINE: true # Build uses offline data
     - name: Run tests
       run: SQLX_OFFLINE=true cargo test --verbose
       env:
-        DATABASE_URL: postgres://user:pass@localhost/db
-        SQLX_OFFLINE: true
+        SQLX_OFFLINE: true # Tests use offline data by default, but can access DB if needed
