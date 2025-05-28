@@ -1,4 +1,4 @@
--- SQL schema for the students table
+// SQL schema for the students table
 /*
 CREATE TABLE IF NOT EXISTS students (
     id SERIAL PRIMARY KEY,
