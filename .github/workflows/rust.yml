@@ -39,6 +39,13 @@ jobs:
         override: true
     - name: Install sqlx-cli
       run: cargo install sqlx-cli --version "0.7.4" --locked --no-default-features --features native-tls,postgres
+    - name: Initialize Database Schema
+      env:
+        PGPASSWORD: testpassword # Use the same password defined for the service
+      run: |
+        # Optional: Install psql client if not available, though it's usually on GitHub runners
+        # sudo apt-get update && sudo apt-get install -y postgresql-client
+        psql -h localhost -U testuser -d testdb -f init_db.sql
     - name: Prepare SQLx data
       run: cargo sqlx prepare --check -- --tests
       env:
