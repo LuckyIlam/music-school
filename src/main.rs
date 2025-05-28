@@ -6,6 +6,9 @@ mod db;
 mod models;
 mod handlers;
 
+#[cfg(test)]
+mod tests;
+
 // Basic health check endpoint
 async fn health_check() -> impl Responder {
     HttpResponse::Ok().body("API is healthy!")
