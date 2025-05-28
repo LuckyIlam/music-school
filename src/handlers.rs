@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse, Responder, http::StatusCode};
+use actix_web::{web, HttpResponse, Responder};
 use sqlx::PgPool;
 use crate::models::{Student, CreateStudent}; // Ensure models are correctly imported
 
