@@ -75,6 +75,7 @@ mod tests {
 
     #[test]
     fn test_invalid_phone_number_formats() {
+
         let invalid_phones = vec![
             "123456789",         // missing leading 0 or country code
             "012345678",         // too short
